@@ -1,0 +1,272 @@
+---
+title: "Study notes"
+author: "Ayesha A"
+date: "2023-10-16"
+output:
+  html_document:
+    toc: TRUE
+    number_sections: TRUE
+    theme: readable
+    code_folding: show
+---
+
+# Inputting Data into R
+
+How to enter data directly:
+
+```{r Data Direct Input FN}
+c() # function combines objects of the same type (e.g., numbers/strings) into vectors
+```
+
+E.G., creating pupil number variable 'pno'.
+Therefore, it would look like:
+
+```{r Sequence FN}
+pno <- seq(1:15)
+```
+
+for other variables, we need to manually input the data and separate with commas:
+
+```{r Manual Data Input}
+sex <- c(1,1,2,1,2,2,1,2,2,1,1,2,1,1,2)
+iq <- c(91,110,107,96,112,109,101,92,115,103,93,106,98,104,99)
+happy <- c(5,5,2,4,1,1,4,2,1,3,5,2,5,2,3)
+teachers <- c(4,3,2,4,1,5,2,1,3,4,5,1,4,2,2)
+friends <- c(3,5,1,4,2,3,3,5,4,4,2,2,3,1,1)
+```
+
+the data will appear in the Environment tab, but it is not a dataframe yet.
+
+# Creating and checking Dataframes
+
+```{r Creating Dataframe}
+pupils <- data.frame(pno,sex,iq,happy,teachers,friends)
+      # by entering pupils, you are able to see what is in the datafile
+pupils
+```
+
+Able to check the variables that're in the DF by using names() FN
+
+```{r Checking variables in DF}
+names(pupils)
+```
+
+Once the DF is created with all the variables, you can use df\$variableName to refer to any specific variable.
+E.G.,
+
+```{r Specific Variable Referencing}
+pupils$sex
+```
+
+# Coding Variables as Factors (nominal categories)
+
+For some variables like iQ, the entries are numerical values that represent some measurement (e.g., IQ test scores).
+For other variables such as sex, the values "1" and "2" have less meaning - labels for nominal categories.
+In this Dataset, 1 = Male, 2 = Female.
+We can use the *\<factor()\>* FN to turn the values in our variable, into nominal categories, and we can add labels to them.
+Below, the command converts the two values (levels) 1 and 2 into labels "Male" and "Female".
+
+```{r turning variable 1 & 2 into male and female}
+factor(pupils$sex, levels=c(1,2), labels=c("Male","Female"))
+```
+
+The above code assigns, but this does not save the new values into the DF.
+To save the recoded values, we have to assign the results of the factor() FN to the variable in the DF:
+
+```{r}
+pupils$sex <- factor(pupils$sex, levels=c(1,2), labels=c("Male","Female"))
+# to view this:
+View(pupils)
+# if you use the head() FN to call the first few rows of data, there are now labels instead of numbers for the variable sex
+head(pupils)
+```
+
+We can also note that for three more variables, **happy, teachers** and **friends**, the 5-point responses are *ordinal categories*, therefore they are ordered by decreasing happiness / popularity.
+However as there are more than 1-2 category codes, 1-5 is needed.
+This is done by:
+
+```{r Creating variables and adding them directly to the Dateframe}
+pupils$happy_f <- factor(pupils$happy, levels = c(1,2,3,4,5),
+                         labels = c("Very happy", "Quite happy","Satisfied","Quite unhappy","Very unhappy"))
+pupils$teachers_f <- factor(pupils$teachers, levels = c(1,2,3,4,5),
+                            labels = c("Very popular", "Quite popular","Average","Quite unpopular","Very unpopular"))
+pupils$friends_f <- factor(pupils$friends, levels = c(1,2,3,4,5),
+                           labels = c("Very popular", "Quite popular","Average","Quite unpopular","Very unpopular"))
+# if you check the dataframe, all of these labels have been assigned:
+head(pupils)
+```
+
+# Saving Data
+
+Saving dataframes into tab-delimited text or CSV (comma-separated values), allows these files to be opened and read easily by a variety of apps and stats packages.
+In order to save this data as a tab-delimited file, use the write.table() function.
+It takes the general form of:
+
+```{}
+write.table(dataframe, "filename.txt", sep = "\t", row.names=FALSE)
+```
+
+A name for the dataframe is needed, as well as one for the file name where you want to save it.
+You also need to indicate which separator you want to use (for tab-delimited, we want to use sep="\t").
+Setting row.names = FALSE prevents R from exporting the column of row numbers, this is not necessary to save and can be viewed in R.
+
+```{r}
+write.csv(pupils, "pupils.csv", row.names=FALSE)
+```
+
+This saves the df as a .csv file which can be imported back into r.
+
+# Creating Basic Graphs
+
+EXAMPLE: Plotting the number of pupils with each level of happinss (from 1="very happy" to 5="very unhappy"), using Base R Functionality.
+
+```{r}
+barplot(pupils$happy)
+```
+
+This is not the desired outcome, as instead of counts of cases in each response category, we are getting the response value for every pupil.
+Therefore, we need to tabulate each of the happiness values, and only then to plot these counts as bars.
+For tabulating, we will use the table() FN.
+
+```{r}
+table(pupils$happy)
+```
+
+This table contains the category values from 1-5 in the first row, and the counts of response in each category in the 2nd row.
+A nicer format would be to have category labels instead, so we can use the happy_f variable to create the next table.
+This will use the barplot() FN:
+
+```{r}
+table(pupils$happy_f)
+```
+
+then:
+
+```{r}
+barplot(table(pupils$happy_f))
+```
+
+To achieve the same thing, we can use ggplot2 package, and its FN ggplot().
+The benefits of this are: - Colour options - Labels, etc In ggplot(), **aes** stands for aesthetics and this includes the variables to be plotted, colour, size, shape of objects, etc.
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+# we start creating histograms by referring to variable happy from the df pupils
+happyggBar <- ggplot(pupils, aes(happy_f))
+
+# now we tell R to create a barplot from this given data
+happyggBar + geom_bar()
+```
+
+We can then add axis labels
+
+```{r}
+happyggBar + geom_bar() + labs(x="Happiness with school", y="Number of pupils")
+```
+
+**Question 1.** Now try to produce a chart that shows the numbers of Males and Females in the dataset.
+Again, you can create counts for every value that the **sex** variable takes using the table() FN, and plot the counts using barplot() FN.
+
+```{r}
+ggplot(pupils, aes(sex)) + geom_bar()
+```
+
+# Displaying frequencies within subsets of cases (The clustered bar chart)
+Next, we may want to display happiness counts by **sex** (separately for males and females).
+
+```{r}
+# we tell r to vary the fill colour of the bars by sex
+
+happyggBar <- ggplot(pupils, aes(happy_f, fill=sex))
+happyggBar + geom_bar() + labs(x="Happiness with school", y="Number of pupils")
+```
+
+**Question 2.** Make a barchart that uses teachers_f, How popular are you with your teachers?
+div by sex
+
+```{r}
+happyggBar <- ggplot(pupils, aes(teachers_f, fill=sex))
+happyggBar + geom_bar() + labs(x="How popular are you with your teachers?", y="Number of pupils")
+```
+
+# Displaying Histograms for continuous variables
+
+When we plot the distribution of continuous variables such as IQ, it might not be possible or sensible to plot counts for every value (like we did above for sex / happiness).
+This is because there may be a lot of different IQ values, resulting in a lot of bars, and in small datasets, there might be no cases for some IQ values.
+We will use *histogram* functions in R, which can combine adjacent values into "bins".
+
+The FN for building a histogram in base R is hist().
+By default, it determines the number of bins by implicitly basing bin sizes on the range of data, but the user can define their own breakpoints between histogram bins.
+To build a histogram for the IQ values in our dataset:
+
+```{r}
+hist(pupils$iq)
+```
+
+To produce a histogram in ggplot2:
+
+```{r}
+ggplot(pupils, aes(iq)) + geom_histogram()
+```
+
+This however, does not look as good, as the data is split into too many bins.
+We also receive a warning that the number of bins is set to 30 by default, this is too many for the iQ data.
+We can supply our own value for the bin width (number of iQ points in each bin) to get a histogram similar to the one we produced using the hist() FN.
+
+```{r}
+ggplot(pupils, aes(iq)) + geom_histogram(binwidth=6)
+```
+
+# Displaying Boxplots
+
+It is useful to summarise the distribution for continuous variables such as iQ without plotting the whole distribution.
+The distribution can be summarised through a **boxplot** which looks like a box with whiskers.
+In the center of the box is the **median** value, and the top and bottom of the box corresponds to values between which 50% of the observation fall.
+The "whiskers" stretch above and below the box to 1.5 times the range in the box (*interquartile range*).
+Any observations falling outside the range of the whiskers are presented as individual points, some of which may present extreme or unusual values (*outliers*).
+
+```{r}
+boxplot(pupils$iq)
+```
+
+```{}
+boxplot(iq - sex, pupils)
+```
+
+And the same in ggplot2:
+
+```{r}
+happyggBox <- ggplot(pupils, aes(sex, iq))
+happyggBox + geom_boxplot()
+```
+
+# Exercise 3: Manipulating Data
+
+We might want to select only a few specific variables or cases from the df, to share this reduced data with a colleague, or to do further analysis only with this subset.
+We use the general format 'dataframe[rows,columns] to refer to rows (cases) and the columns (variables) that we want.
+
+For example, we may want to create a new df containing only the self-rated happiness, popularity with teachers and friends.
+For that, we retain all rows (so we do not specify anything before the comma, but list the variable names that we want to select in columns).
+
+```{r}
+pupils_rated <- pupils[ ,c("happy", "teachers", "friends")]
+head(pupils_rated)
+```
+
+For example, we may want to create a new df containing only data for females.
+To do this, we select rows with sex equal to "Female" (sex=="Female"), and retain all columns (so we do not specify anything after the comma).
+
+```{r}
+pupils_Female <- pupils[pupils$sex=="Female", ]
+pupils_Female
+```
+
+**Question 3.** Now try to create a new dataset selecting only pupils with iQ greater than 100, and retaining only their iQ, sex, and happiness with school.
+
+```{r}
+pupils_new <- pupils[pupils$iq>100 ,c("iq","sex","happy")]
+pupils_new
+```
